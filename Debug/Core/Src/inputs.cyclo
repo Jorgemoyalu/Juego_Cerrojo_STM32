@@ -1,0 +1,4 @@
+../Core/Src/inputs.c:5:6:Inputs_Init	1
+../Core/Src/inputs.c:9:9:Inputs_ReadPot	7
+../Core/Src/inputs.c:36:9:Inputs_ReadValidarBtn	4
+../Core/Src/inputs.c:49:6:Inputs_LedControl	5
