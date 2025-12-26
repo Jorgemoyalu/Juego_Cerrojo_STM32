@@ -38,9 +38,9 @@ Para mantener la integridad del código y evitar conflictos, **es obligatorio se
 | Componente | Conexión (Pinout) | Responsable | Estado |
 | :--- | :--- | :--- | :--- |
 | **Microcontrolador** | STM32F411RE / F407 | - | ✅ Configurado |
-| **4x Potenciómetros** | Pines ADC (`PA0`, `PA1`, `PA4`, `PA5`) | **Moya** | ✅ Implementado |
-| **Botones (Validar/Rst)** | GPIO con Interrupciones Externas | **Moya** | ✅ Implementado |
-| **Buzzer (Pasivo)** | PWM (Timer) | **Moya** | ✅ Implementado |
+| **4x Potenciómetros** | Pines ADC (`PA0`, `PA1`, `PA4`, `PA5`) | **Moya** | ⏳ Pendiente |
+| **Botones (Validar/Rst)** | GPIO con Interrupciones Externas | **Moya** | ⏳ Pendiente |
+| **Buzzer (Pasivo)** | PWM (Timer) | **Moya** | ⏳ Pendiente |
 | **Pantalla LCD** | I2C (`PB6`, `PB7`) | **Tudor** | ⏳ Pendiente |
 | **Módulo Bluetooth** | UART (`PA9`, `PA10`) | **Gabri** | ⏳ Pendiente |
 | **Lógica del Juego** | Máquina de Estados (FSM) | **Gabri** | ⏳ Pendiente |
@@ -74,11 +74,13 @@ Sigue estos pasos para clonar el proyecto y trabajar en tu máquina local:
 
 El código se ha modularizado para facilitar el desarrollo paralelo:
 
-* `Core/Src/inputs.c`: Drivers de ADC, Botones y LEDs (Moya).
+* `Core/Src/main.c`: Configuración HAL, Timers e interrupciones (Tudor).
+* `Core/Src/inputs.c`: Drivers de ADC y Botones (Moya).
 * `Core/Src/audio.c`: Control de PWM y melodías (Moya).
-* `Core/Src/display.c`: Librería y gestión de la LCD (Tudor).
-* `Core/Src/game_logic.c`: Máquina de estados del juego (Gabri).
+* `Core/Src/display.c`: Librería de la LCD y control de LEDs (Tudor).
+* `Core/Src/juego.c`: Máquina de estados del juego (Gabri).
 * `Core/Src/bluetooth.c`: Gestión de comandos UART (Gabri).
+* `Core/Src/ranking.c`: Gestión del Top 10 de puntuaciones (Tudor).
 
 ---
 
