@@ -1,55 +1,29 @@
-# Prerequisites
-*.d
+# --- CARPETAS DE BASURA (Compilación) ---
+Debug/
+Release/
+build/
+bin/
+Settings/
 
-# Object files
+# --- ARCHIVOS TEMPORALES DE CUBEIDE ---
 *.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
+*.d
 *.su
-*.idb
-*.pdb
+*.cyclo
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.lck
+*.launch
+*.tmp
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# --- BASURA DEL MAKEFILE (Lo que te salía suelto) ---
+makefile
+objects.list
+*.mk
 
-# debug information files
-*.dwo
+# --- ARCHIVOS DE SISTEMA ---
+Thumbs.db
+.DS_Store
