@@ -1,8 +1,2 @@
-/*
- * bluetooth_Gabriela.c
- * Author: Gabriela Fernández Álvarez
- * DESCRIPCIÓN:
- *   [AÑADIR DESCRIPCIÓN AQUÍ]
- */
-
-
+#include "bluetooth_Gabriela.h"
+// GABRI: Implementar HAL_UART_Transmit aquí

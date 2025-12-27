@@ -1,13 +1,8 @@
-/*
- * bluetooth_Gabriela.h
- *
- *  Created on: Dec 26, 2025
- *      Author: gfernandez
- */
+#ifndef INC_BLUETOOTH_H_
+#define INC_BLUETOOTH_H_
+#include "main.h"
 
-#ifndef INC_BLUETOOTH_GABRIELA_H_
-#define INC_BLUETOOTH_GABRIELA_H_
+// TODO: Definir funciones para enviar mensajes UART
+// void BT_SendString(char* msg);
 
-
-
-#endif /* INC_BLUETOOTH_GABRIELA_H_ */
+#endif

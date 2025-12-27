@@ -1,13 +1,21 @@
+#ifndef INC_DISPLAY_H_
+#define INC_DISPLAY_H_
+
+#include "main.h"
+
 /*
- * display_Tudor.h
+ * MÓDULO DISPLAY & FEEDBACK
+ * Responsable: TUDOR
  *
- *  Created on: Dec 26, 2025
- *      Author: gfernandez
+ * Funcionalidades:
+ * 1. Control de Pantalla LCD (I2C).
+ * 2. Control de Semáforo de LEDs (Verde, Amarillo, Rojo).
  */
 
-#ifndef INC_DISPLAY_TUDOR_H_
-#define INC_DISPLAY_TUDOR_H_
+// TODO: Definir funciones para inicializar LCD
+// void Display_Init(void);
 
+// TODO: Función para actualizar el semáforo
+// void Display_SetTrafficLight(uint8_t red, uint8_t yellow, uint8_t green);
 
-
-#endif /* INC_DISPLAY_TUDOR_H_ */
+#endif

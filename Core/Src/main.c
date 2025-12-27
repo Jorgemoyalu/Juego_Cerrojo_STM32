@@ -24,8 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "inputs.h"
-#include "audio.h"
+#include "inputs_Jorge.h"
+#include "audio_Jorge.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,13 +92,11 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  Inputs_Init(&hadc1); // Le pasamos el control del ADC a tu driver
+  Inputs_Init();
   Audio_Init(&htim3);  // Le pasamos el control del Timer a tu driver
 
   // Prueba de vida (¡Para saber que funciona!)
-  Inputs_LedControl(COLOR_VERDE, LED_ON);
-  Audio_PlayTone(NOTE_A4, 200);
-  Inputs_LedControl(COLOR_VERDE, LED_OFF);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

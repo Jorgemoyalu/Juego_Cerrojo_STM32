@@ -1,12 +1,4 @@
-/*
- * audio_Jorge.c
- * Author: Jorge ...
- * DESCRIPCIÓN:
- *   [AÑADIR DESCRIPCIÓN AQUÍ]
- */
-
-
-#include "audio.h"
+#include "audio_Jorge.h"
 
 static TIM_HandleTypeDef *htim_audio;
 
