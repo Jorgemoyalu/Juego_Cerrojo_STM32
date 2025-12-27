@@ -2,8 +2,8 @@
 #define INC_GAME_LOGIC_H_
 
 #include "main.h"
-#include "inputs.h"   // Necesita leer tus botones
-#include "display.h"  // Necesita pintar en la pantalla
+#include "inputs_Jorge.h"   // Necesita leer tus botones
+#include "display_Tudor.h"  // Necesita pintar en la pantalla
 
 /*
  * MÓDULO LÓGICA DEL JUEGO (FSM)

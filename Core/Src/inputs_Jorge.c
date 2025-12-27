@@ -3,7 +3,7 @@
  * Implementación de drivers de entrada con lógica de tiempos.
  */
 
-#include "inputs.h"
+#include "inputs_Jorge.h"
 
 // Referencia al ADC definido en main.c (manejado por el IDE)
 extern ADC_HandleTypeDef hadc1;

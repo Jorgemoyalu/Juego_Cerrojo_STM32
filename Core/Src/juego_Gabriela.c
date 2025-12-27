@@ -1,4 +1,4 @@
-#include "game_logic.h"
+#include "juego_Gabriela.h"
 
 // Variable global de estado
 static GameState_t current_state = STATE_STANDBY;
