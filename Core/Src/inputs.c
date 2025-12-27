@@ -1,64 +1,100 @@
+/*
+ * inputs.c
+ * Implementación de drivers de entrada con lógica de tiempos.
+ */
+
 #include "inputs.h"
 
-static ADC_HandleTypeDef *hadc_local; // Variable privada
+// Referencia al ADC definido en main.c (manejado por el IDE)
+extern ADC_HandleTypeDef hadc1;
 
-void Inputs_Init(ADC_HandleTypeDef *hadc_instance) {
-    hadc_local = hadc_instance;
+// --- VARIABLES PRIVADAS PARA LA LÓGICA DE TIEMPOS ---
+static uint32_t validar_start_time = 0;
+static uint8_t  validar_is_pressed = 0;
+
+static uint32_t menu_start_time = 0;
+static uint8_t  menu_is_pressed = 0;
+
+// Umbrales de tiempo (Según chat: 3s para largo)
+#define DEBOUNCE_MS     50    // Filtro anti-rebote
+#define LONG_PRESS_MS   3000  // 3000 ms = 3 segundos
+
+void Inputs_Init(void) {
+    // Si necesitas iniciar algo específico, va aquí.
+    // El HAL_ADC_Start se suele llamar en el main, pero por seguridad:
+    // HAL_ADC_Start(&hadc1);
 }
 
-uint8_t Inputs_ReadPot(uint8_t pot_index) {
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+uint8_t Inputs_ReadPot(uint8_t channel_index) {
+    // NOTA: Asumimos que el ADC está configurado.
+    // Leemos el valor y lo convertimos a 0-9
 
-    // Seleccionamos qué canal leer
-    switch(pot_index) {
-        case 1: sConfig.Channel = ADC_CHANNEL_1; break;
-        case 2: sConfig.Channel = ADC_CHANNEL_2; break;
-        case 3: sConfig.Channel = ADC_CHANNEL_3; break;
-        case 4: sConfig.Channel = ADC_CHANNEL_4; break;
-        default: return 0;
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+        uint32_t raw_val = HAL_ADC_GetValue(&hadc1);
+
+        // Escalado: 12 bits (0-4095) -> (0-9)
+        // Fórmula: (Valor * 9) / 4095
+        return (uint8_t)((raw_val * 9) / 4095);
     }
-
-    if (HAL_ADC_ConfigChannel(hadc_local, &sConfig) != HAL_OK) return 0;
-
-    HAL_ADC_Start(hadc_local);
-    if (HAL_ADC_PollForConversion(hadc_local, 10) == HAL_OK) {
-        uint32_t val = HAL_ADC_GetValue(hadc_local);
-        HAL_ADC_Stop(hadc_local);
-        // Truco matemático: 4096 / 10 = ~410 por número
-        uint8_t digit = val / 410;
-        return (digit > 9) ? 9 : digit;
-    }
-    return 0;
+    return 0; // Valor por defecto si falla
 }
 
-uint8_t Inputs_ReadValidarBtn(void) {
-    // Leemos el botón PA0 (Botón Azul User o el externo que hayas puesto)
-    // Usamos GPIOA y GPIO_PIN_0 directamente para evitar errores de etiquetas
-    if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
-        HAL_Delay(20); // Anti-rebote
-        if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
-            while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET); // Esperar a soltar
-            return 1;
+ButtonState_t Inputs_ReadValidarBtn(void) {
+    // Leemos el pin PA0 (Asumiendo Pull-Down: 1 = Pulsado)
+    GPIO_PinState estado_actual = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+
+    ButtonState_t evento = BTN_IDLE;
+    uint32_t ahora = HAL_GetTick();
+
+    if (estado_actual == GPIO_PIN_SET) {
+        // BOTÓN PRESIONADO
+        if (!validar_is_pressed) {
+            validar_is_pressed = 1;
+            validar_start_time = ahora;
         }
     }
-    return 0;
+    else {
+        // BOTÓN SOLTADO
+        if (validar_is_pressed) {
+            uint32_t duracion = ahora - validar_start_time;
+            validar_is_pressed = 0; // Reset flag
+
+            // Lógica de tiempos
+            if (duracion >= LONG_PRESS_MS) {
+                evento = BTN_LONG_CLICK; // > 3 seg (Pista)
+            } else if (duracion >= DEBOUNCE_MS) {
+                evento = BTN_SHORT_CLICK; // Click normal (Validar)
+            }
+        }
+    }
+    return evento;
 }
 
-void Inputs_LedControl(uint8_t led_color, uint8_t state) {
-    GPIO_PinState pState = (state == LED_ON) ? GPIO_PIN_SET : GPIO_PIN_RESET;
+ButtonState_t Inputs_ReadMenuBtn(void) {
+    // Leemos el pin PC13 (Botón Menú/Reset)
+    GPIO_PinState estado_actual = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 
-    // Usamos el Puerto D (GPIOD) que es donde están los LEDs en la F411 Discovery
-    switch(led_color) {
-        case COLOR_VERDE:
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, pState); // Pin 12 = Verde
-            break;
-        case COLOR_AMARILLO:
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, pState); // Pin 13 = Naranja/Amarillo
-            break;
-        case COLOR_ROJO:
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, pState); // Pin 14 = Rojo
-            break;
+    ButtonState_t evento = BTN_IDLE;
+    uint32_t ahora = HAL_GetTick();
+
+    if (estado_actual == GPIO_PIN_SET) {
+        if (!menu_is_pressed) {
+            menu_is_pressed = 1;
+            menu_start_time = ahora;
+        }
     }
+    else {
+        if (menu_is_pressed) {
+            uint32_t duracion = ahora - menu_start_time;
+            menu_is_pressed = 0;
+
+            if (duracion >= LONG_PRESS_MS) {
+                evento = BTN_LONG_CLICK; // Apagar
+            } else if (duracion >= DEBOUNCE_MS) {
+                evento = BTN_SHORT_CLICK; // Reset
+            }
+        }
+    }
+    return evento;
 }
