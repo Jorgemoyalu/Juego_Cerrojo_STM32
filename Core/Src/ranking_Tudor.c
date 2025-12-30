@@ -9,6 +9,14 @@
 
 Jugador Top10[MAX_JUGADORES];
 
+// Borra todos los records y deja la tabla limpia
+void Ranking_Borrar_Todo(void) {
+    for (int i = 0; i < MAX_JUGADORES; i++) {
+        Top10[i].id_usuario = 0;
+        Top10[i].puntuacion = 99999; // Volver a valor infinito
+    }
+}
+
 // Ponemos la tabla a cero al arrancar
 void Ranking_Init(void) {
     for (int i = 0; i < MAX_JUGADORES; i++) {

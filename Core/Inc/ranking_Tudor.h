@@ -20,6 +20,7 @@ typedef struct {
 
 extern Jugador Top10[MAX_JUGADORES];
 
+void Ranking_Borrar_Todo(void);
 void Ranking_Init(void);
 void Ranking_Actualizar(uint16_t id, uint32_t puntos);
 
