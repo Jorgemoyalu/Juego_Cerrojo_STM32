@@ -78,14 +78,20 @@ void Actualizar_Semaforo(EstadoSemaforo estado) {
 
 void Leer_Potenciometros(ADC_HandleTypeDef *hadc, EntradasUsuario *misInputs) {
     for (int i = 0; i < 4; i++) {
-        HAL_ADC_Start(hadc);
-        if (HAL_ADC_PollForConversion(hadc, 10) == HAL_OK) {
-            uint32_t lecturaRaw = HAL_ADC_GetValue(hadc);
-            // Mapeo 0-9
-            uint8_t valorMapeado = (lecturaRaw * 10) / 4090;
-            if (valorMapeado > 9) valorMapeado = 9;
-            misInputs->digito[i] = valorMapeado;
+    	uint32_t suma = 0;
+    	// Tomamos 10 muestras rápidas
+    	for(int j=0; j<10; j++){
+    	HAL_ADC_Start(hadc);
+    	if (HAL_ADC_PollForConversion(hadc, 5) == HAL_OK)
+    		suma += HAL_ADC_GetValue(hadc);
+    	}
+    	// Calculamos la media
+    	uint32_t media = suma / 10;
+    	// Mapeamos el valor medio (0-4095 -> 0-9)
+        uint8_t valorMapeado = (media * 10) / 4095;
+        if (valorMapeado > 9) valorMapeado = 9;
+
+        misInputs->digito[i] = valorMapeado;
         }
-    }
     HAL_ADC_Stop(hadc);
 }
