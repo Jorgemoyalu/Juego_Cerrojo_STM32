@@ -19,13 +19,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "i2c.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include "inputs_Jorge.h"
 #include "audio_Jorge.h"
+#include "display_Tudor.h"
+#include "ranking_Tudor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,13 +50,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+EntradasUsuario misPotenciometros;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void MX_I2C1_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -91,21 +95,70 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
+  MX_I2C1_Init();
+  MX_TIM2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   Inputs_Init();
-  Audio_Init(&htim3);  // Le pasamos el control del Timer a tu driver
+  Display_Init();
+  Ranking_Init();
+  Audio_Init(&htim3);
+  HAL_TIM_Base_Start_IT(&htim2); // Timer del Juego (1 Hz / 1 seg)
+  HAL_TIM_Base_Start_IT(&htim4); // Timer de Botones (100 Hz / 10 ms)
 
-  // Prueba de vida (¡Para saber que funciona!)
+  //Pantalla de carga al comienzo
+  Display_LCD_Limpiar();
+  Display_LCD_Escribir(0, 0, "Cargando...");
+    for(int i = 0; i <= 100; i += 2) {
+        Display_BarraProgreso(1, i);
+        HAL_Delay(20);
+    }
 
+    HAL_Delay(500);
+    Display_LCD_Limpiar();
+
+  // Hace un parpadeo de victoria al arrancar para saber que la placa está viva
+  Actualizar_Semaforo(LED_VICTORIA);
+  HAL_Delay(500);
+  Actualizar_Semaforo(LED_APAGADO);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  // Limpiamos la pantalla una vez antes de entrar
+    Display_LCD_Limpiar();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	Leer_Potenciometros(&hadc1, &misPotenciometros);
+	//PINTAR EN LCD
+	    char buffer[32];
+	    // Pintamos los 4 valores: Ej "Codigo: 1 5 9 0"
+	    sprintf(buffer, "Code: %d %d %d %d",
+	            misPotenciometros.digito[0],
+	            misPotenciometros.digito[1],
+	            misPotenciometros.digito[2],
+	            misPotenciometros.digito[3]);
+
+	    Display_LCD_Escribir(0, 0, "CERROJO TGJ"); // Fila 0
+	    Display_LCD_Escribir(1, 0, buffer);         // Fila 1
+	// 2. Lógica simple para probar el semáforo:
+	    //Miramos el valor del Primer Potenciómetro (Ruleta 1)
+	    if (misPotenciometros.digito[0] < 3) {
+	        // Si está bajo (0-2) -> Rojo (FRÍO)
+	        Actualizar_Semaforo(LED_FRIO_ROJO);
+	    }
+	    else if (misPotenciometros.digito[0] < 7) {
+	        // Si está medio (3-6) -> Amarillo (TEMPLADO)
+	        Actualizar_Semaforo(LED_TEMPLADO_AMARILLO);
+	    }
+	    else {
+	        // Si está alto (7-9) -> Verde (CALIENTE)
+	        Actualizar_Semaforo(LED_CALIENTE_VERDE);
+	    }
+	    HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }
@@ -127,12 +180,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 7;
-  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 50;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
   RCC_OscInitStruct.PLL.PLLQ = 8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -146,10 +200,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }

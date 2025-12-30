@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "tim.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +58,8 @@
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
-
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim4;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -199,5 +201,14 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+void TIM2_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim2);
+}
 
+// Manejador del Timer 4 (Botones)
+void TIM4_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim4);
+}
 /* USER CODE END 1 */

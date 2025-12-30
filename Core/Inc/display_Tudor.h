@@ -6,16 +6,27 @@
 /*
  * MÓDULO DISPLAY & FEEDBACK
  * Responsable: TUDOR
- *
- * Funcionalidades:
- * 1. Control de Pantalla LCD (I2C).
- * 2. Control de Semáforo de LEDs (Verde, Amarillo, Rojo).
  */
 
-// TODO: Definir funciones para inicializar LCD
-// void Display_Init(void);
+ // 1. Definición de estados para el semáforo (LEDs)
+typedef enum {
+    LED_APAGADO = 0,
+    LED_FRIO_ROJO,
+    LED_TEMPLADO_AMARILLO,
+    LED_CALIENTE_VERDE,
+    LED_VICTORIA // Enciende todos a la vez
+} EstadoSemaforo;
 
-// TODO: Función para actualizar el semáforo
-// void Display_SetTrafficLight(uint8_t red, uint8_t yellow, uint8_t green);
+// 2. Estructura para guardar los valores de los 4 potenciómetros
+typedef struct {
+    uint8_t digito[4]; // Guardaremos valores del 0 al 9
+} EntradasUsuario;
 
+// --- FUNCIONES PÚBLICAS (PROTOTIPOS) ---
+void Display_Init(void);
+void Display_BarraProgreso(uint8_t fila, uint8_t porcentaje);
+void Leer_Potenciometros(ADC_HandleTypeDef *hadc, EntradasUsuario *misInputs);
+void Actualizar_Semaforo(EstadoSemaforo estado);
+void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
+void Display_LCD_Limpiar(void);
 #endif
