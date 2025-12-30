@@ -106,6 +106,17 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2); // Timer del Juego (1 Hz / 1 seg)
   HAL_TIM_Base_Start_IT(&htim4); // Timer de Botones (100 Hz / 10 ms)
 
+  //Pantalla de carga al comienzo
+  Display_LCD_Limpiar();
+  Display_LCD_Escribir(0, 0, "Cargando...");
+    for(int i = 0; i <= 100; i += 2) {
+        Display_BarraProgreso(1, i);
+        HAL_Delay(20);
+    }
+
+    HAL_Delay(500);
+    Display_LCD_Limpiar();
+
   // Hace un parpadeo de victoria al arrancar para saber que la placa está viva
   Actualizar_Semaforo(LED_VICTORIA);
   HAL_Delay(500);

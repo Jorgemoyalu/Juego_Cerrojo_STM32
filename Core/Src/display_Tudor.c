@@ -95,3 +95,25 @@ void Leer_Potenciometros(ADC_HandleTypeDef *hadc, EntradasUsuario *misInputs) {
         }
     HAL_ADC_Stop(hadc);
 }
+
+void Display_BarraProgreso(uint8_t fila, uint8_t porcentaje) {
+    // Aseguramos que el porcentaje no pase de 100
+    if (porcentaje > 100) porcentaje = 100;
+
+    // Calculamos cuántos bloques negros hay que pintar (de 16 columnas)
+    uint8_t bloques = (porcentaje * 16) / 100;
+
+    // Nos ponemos al principio de la fila
+    Display_LCD_Escribir(fila, 0, "");
+    // Comando para mover cursor: 0x80 para fila 0, 0xC0 para fila 1
+    uint8_t pos = (fila == 0) ? 0x80 : 0xC0;
+    LCD_Send_Cmd(pos);
+
+    for (int i = 0; i < 16; i++) {
+        if (i < bloques) {
+            LCD_Send_Data(0xFF);
+        } else {
+            LCD_Send_Data(' ');
+        }
+    }
+}

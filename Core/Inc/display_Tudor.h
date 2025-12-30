@@ -24,6 +24,7 @@ typedef struct {
 
 // --- FUNCIONES PÚBLICAS (PROTOTIPOS) ---
 void Display_Init(void);
+void Display_BarraProgreso(uint8_t fila, uint8_t porcentaje);
 void Leer_Potenciometros(ADC_HandleTypeDef *hadc, EntradasUsuario *misInputs);
 void Actualizar_Semaforo(EstadoSemaforo estado);
 void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
