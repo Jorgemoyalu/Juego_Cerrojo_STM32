@@ -51,6 +51,8 @@
 
 /* USER CODE BEGIN PV */
 EntradasUsuario misPotenciometros;
+volatile int tiempo_restante = 60;
+//volatile int contador_tim4 = 0; //Variable de prueba TIM4
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,8 +105,6 @@ int main(void)
   Display_Init();
   Ranking_Init();
   Audio_Init(&htim3);
-  HAL_TIM_Base_Start_IT(&htim2); // Timer del Juego (1 Hz / 1 seg)
-  HAL_TIM_Base_Start_IT(&htim4); // Timer de Botones (100 Hz / 10 ms)
 
   //Pantalla de carga al comienzo
   Display_LCD_Limpiar();
@@ -116,11 +116,17 @@ int main(void)
 
     HAL_Delay(500);
     Display_LCD_Limpiar();
+//Bienvenida: Parpadeo de luces
+    for(int k=0; k<3; k++) {
+          Actualizar_Semaforo(LED_VICTORIA);
+          HAL_Delay(150); // Encendido rápido
+          Actualizar_Semaforo(LED_APAGADO);
+          HAL_Delay(150); // Apagado rápido
+      }
 
-  // Hace un parpadeo de victoria al arrancar para saber que la placa está viva
-  Actualizar_Semaforo(LED_VICTORIA);
-  HAL_Delay(500);
-  Actualizar_Semaforo(LED_APAGADO);
+  HAL_TIM_Base_Start_IT(&htim2); // Timer del Juego (1 Hz / 1 seg)
+  HAL_TIM_Base_Start_IT(&htim4); // Timer de Botones (100 Hz / 10 ms)
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -135,16 +141,26 @@ int main(void)
 	Leer_Potenciometros(&hadc1, &misPotenciometros);
 	//PINTAR EN LCD
 	    char buffer[32];
+	    char bufferTiempo[24];
 	    // Pintamos los 4 valores: Ej "Codigo: 1 5 9 0"
 	    sprintf(buffer, "Code: %d %d %d %d",
 	            misPotenciometros.digito[0],
 	            misPotenciometros.digito[1],
 	            misPotenciometros.digito[2],
 	            misPotenciometros.digito[3]);
+	    //Prueba TIM4
+	    //sprintf(buffer, "TEST TIM4: %d", contador_tim4);
+	    //Display_LCD_Escribir(1, 0, buffer);
 
-	    Display_LCD_Escribir(0, 0, "CERROJO TGJ"); // Fila 0
+	    // Lógica del Tiempo para la Fila 0
+	        if (tiempo_restante > 0) {
+	            sprintf(bufferTiempo, "TIEMPO: %02d s    ", tiempo_restante);
+	        } else {
+	            sprintf(bufferTiempo, "!! TIME OUT !!  ");
+	        }
+	        Display_LCD_Escribir(0, 0, bufferTiempo);
 	    Display_LCD_Escribir(1, 0, buffer);         // Fila 1
-	// 2. Lógica simple para probar el semáforo:
+	    //Lógica simple para probar el semáforo:
 	    //Miramos el valor del Primer Potenciómetro (Ruleta 1)
 	    if (misPotenciometros.digito[0] < 3) {
 	        // Si está bajo (0-2) -> Rojo (FRÍO)
@@ -210,6 +226,22 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    // CASO 1: Timer del JUEGO (1 segundo)
+    if (htim->Instance == TIM2) {
+        if (tiempo_restante > 0) {
+            tiempo_restante--;
+        }
+    }
+
+    // CASO 2: Timer de BOTONES (10 milisegundos)
+    if (htim->Instance == TIM4) {
+    	//contador_tim4++; //Para prueba de contador tim 4
+        // Inputs_Leer_Botones();
+    }
+}
+
 
 /* USER CODE END 4 */
 
