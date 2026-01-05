@@ -10,6 +10,8 @@
 #include <stdio.h>  // Para sprintf (montar el texto)
 #include <string.h> // Para strlen (medir el texto)
 
+#include "main.h"
+
 // Traemos la variable global 'Juego' para saber en qué nivel estás
 extern Juego_Handle_t Juego;
 

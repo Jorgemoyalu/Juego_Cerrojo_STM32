@@ -19,7 +19,7 @@
 
 // VARIABLES GLOBALES
 Juego_Handle_t Juego;
-char lcd_buffer[17]; // Buffer para textos de 16 caracteres + null
+char lcd_buffer[32]; // Buffer extendido para que no haya problemas
 
 
 // FUNCIONES PRIVADAS (Funciones sucias)
