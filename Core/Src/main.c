@@ -31,6 +31,8 @@
 #include "audio_Jorge.h"
 #include "display_Tudor.h"
 #include "ranking_Tudor.h"
+#include "juego_Gabriela.h"
+#include "bluetooth_Gabriela.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -126,8 +128,10 @@ int main(void)
           HAL_Delay(150); // Apagado rápido
       }
 
+  Juego_Init();//Inicio del juego
+
   HAL_TIM_Base_Start_IT(&htim2); // Timer del Juego (1 Hz / 1 seg)
-  HAL_TIM_Base_Start_IT(&htim4); // Timer de Botones (100 Hz / 10 ms)
+  HAL_TIM_Base_Start_IT(&htim4); // Bloetooth y Lógica
 
   /* USER CODE END 2 */
 
@@ -140,45 +144,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	Leer_Potenciometros(&hadc1, &misPotenciometros);
-	//PINTAR EN LCD
-	    char buffer[32];
-	    char bufferTiempo[24];
-	    // Pintamos los 4 valores: Ej "Codigo: 1 5 9 0"
-	    sprintf(buffer, "Code: %d %d %d %d",
-	            misPotenciometros.digito[0],
-	            misPotenciometros.digito[1],
-	            misPotenciometros.digito[2],
-	            misPotenciometros.digito[3]);
-	    //Prueba TIM4
-	    //sprintf(buffer, "TEST TIM4: %d", contador_tim4);
-	    //Display_LCD_Escribir(1, 0, buffer);
-
-	    // Lógica del Tiempo para la Fila 0
-	        if (tiempo_restante > 0) {
-	            sprintf(bufferTiempo, "TIEMPO: %02d s    ", tiempo_restante);
-	        } else {
-	            sprintf(bufferTiempo, "!! TIME OUT !!  ");
-	        }
-	        Display_LCD_Escribir(0, 0, bufferTiempo);
-	    Display_LCD_Escribir(1, 0, buffer);         // Fila 1
-	    //Lógica simple para probar el semáforo:
-	    //Miramos el valor del Primer Potenciómetro (Ruleta 1)
-	    if (misPotenciometros.digito[0] < 3) {
-	        // Si está bajo (0-2) -> Rojo (FRÍO)
-	        Actualizar_Semaforo(LED_FRIO_ROJO);
-	    }
-	    else if (misPotenciometros.digito[0] < 7) {
-	        // Si está medio (3-6) -> Amarillo (TEMPLADO)
-	        Actualizar_Semaforo(LED_TEMPLADO_AMARILLO);
-	    }
-	    else {
-	        // Si está alto (7-9) -> Verde (CALIENTE)
-	        Actualizar_Semaforo(LED_CALIENTE_VERDE);
-	    }
-	    HAL_Delay(50);
+	 Juego_FSM_Update();
+	/* USER CODE END 3 */
   }
-  /* USER CODE END 3 */
+
 }
 
 /**
@@ -237,10 +206,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         }
     }
 
-    // CASO 2: Timer de BOTONES (10 milisegundos)
+    // CASO 2: Timer RÁPIDO (Lógica del juego)
     if (htim->Instance == TIM4) {
-    	//contador_tim4++; //Para prueba de contador tim 4
-        // Inputs_Leer_Botones();
+    	Juego_Tick_Timer();
     }
 }
 
