@@ -1,8 +1,19 @@
-#ifndef INC_BLUETOOTH_H_
-#define INC_BLUETOOTH_H_
-#include "main.h"
+/*
+ * bluetooth_Gabriela.h
+ * Responsable: Gabriela
+ *
+ * DESCRIPCIÓN:
+ * Cabecera para el módulo de comunicaciones Bluetooth.
+ */
 
-// TODO: Definir funciones para enviar mensajes UART
-// void BT_SendString(char* msg);
+#ifndef INC_BLUETOOTH_GABRIELA_H_
+#define INC_BLUETOOTH_GABRIELA_H_
 
-#endif
+#include "main.h"            // Para tipos de datos básicos
+#include "juego_Gabriela.h"  // Para el tipo "Dificultad_t"
+
+// FUNCIÓN PÚBLICA
+// Envía por UART la pista del número que te tiene atascada
+void Bluetooth_EnviarPista(uint8_t *codigoSecreto, Dificultad_t dificultad);
+
+#endif /* INC_BLUETOOTH_GABRIELA_H_ */
