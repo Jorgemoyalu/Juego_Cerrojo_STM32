@@ -56,13 +56,13 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : BTN_MENU_Pin */
   GPIO_InitStruct.Pin = BTN_MENU_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BTN_MENU_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BTN_VALIDAR__Pin */
   GPIO_InitStruct.Pin = BTN_VALIDAR__Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BTN_VALIDAR__GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_VERDE_Pin LED_AMARILLO_Pin LED_ROJO_Pin */

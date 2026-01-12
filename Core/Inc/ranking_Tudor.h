@@ -11,17 +11,17 @@
 #include "main.h"
 
 #define MAX_JUGADORES 10
-
+#define NUM_DIFICULTADES 3
 
 typedef struct {
     uint16_t id_usuario;  // ID del 0000 al 9999
     uint32_t puntuacion;  // Puntos conseguidos
 } Jugador;
 
-extern Jugador Top10[MAX_JUGADORES];
+extern Jugador Top10[NUM_DIFICULTADES][MAX_JUGADORES];
 
 void Ranking_Borrar_Todo(void);
 void Ranking_Init(void);
-void Ranking_Actualizar(uint16_t id, uint32_t puntos);
+void Ranking_Actualizar(uint16_t id, uint32_t puntos,uint8_t dificultad);
 
 #endif /* INC_RANKING_TUDOR_H_ */

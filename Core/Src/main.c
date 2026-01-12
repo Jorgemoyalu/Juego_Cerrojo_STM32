@@ -145,9 +145,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	 Juego_FSM_Update();
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
   }
-
 }
 
 /**

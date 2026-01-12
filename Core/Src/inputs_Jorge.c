@@ -1,53 +1,73 @@
 /*
  * inputs.c
- * Implementación de drivers de entrada con lógica de tiempos.
+ * CORREGIDO POR TUDOR
+ * - Añadida selección de canal ADC para leer los 4 potenciómetros.
+ * - Invertida la lógica de botones para Pull-Up (0 = Pulsado).
  */
 
 #include "inputs_Jorge.h"
 
-// Referencia al ADC definido en main.c (manejado por el IDE)
+// Referencia al ADC definido en main.c
 extern ADC_HandleTypeDef hadc1;
 
-// --- VARIABLES PRIVADAS PARA LA LÓGICA DE TIEMPOS ---
 static uint32_t validar_start_time = 0;
 static uint8_t  validar_is_pressed = 0;
 
 static uint32_t menu_start_time = 0;
 static uint8_t  menu_is_pressed = 0;
 
-// Umbrales de tiempo (Según chat: 3s para largo)
-#define DEBOUNCE_MS     50    // Filtro anti-rebote
-#define LONG_PRESS_MS   3000  // 3000 ms = 3 segundos
+#define DEBOUNCE_MS     50
+#define LONG_PRESS_MS   3000
 
 void Inputs_Init(void) {
-    // Si necesitas iniciar algo específico, va aquí.
-    // El HAL_ADC_Start se suele llamar en el main, pero por seguridad:
-    // HAL_ADC_Start(&hadc1);
 }
 
 uint8_t Inputs_ReadPot(uint8_t channel_index) {
-    // NOTA: Asumimos que el ADC está configurado.
-    // Leemos el valor y lo convertimos a 0-9
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+    sConfig.Rank = 1;
 
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-        uint32_t raw_val = HAL_ADC_GetValue(&hadc1);
-
-        // Escalado: 12 bits (0-4095) -> (0-9)
-        // Fórmula: (Valor * 9) / 4095
-        return (uint8_t)((raw_val * 9) / 4095);
+    switch(channel_index) {
+        case 0: sConfig.Channel = ADC_CHANNEL_1; break; // PA1
+        case 1: sConfig.Channel = ADC_CHANNEL_2; break; // PA2
+        case 2: sConfig.Channel = ADC_CHANNEL_3; break; // PA3
+        case 3: sConfig.Channel = ADC_CHANNEL_4; break; // PA4
+        default: return 0;
     }
-    return 0; // Valor por defecto si falla
-}
 
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) return 0;
+
+    // Limpieza
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 10);
+    volatile uint32_t basura = HAL_ADC_GetValue(&hadc1);
+    (void)basura;
+
+    // Lectura
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 20) == HAL_OK) {
+        uint32_t raw_val = HAL_ADC_GetValue(&hadc1);
+        if (raw_val < 400)  return 0;
+        if (raw_val < 800)  return 1;
+        if (raw_val < 1200) return 2;
+        if (raw_val < 1600) return 3;
+        if (raw_val < 2000) return 4;
+        if (raw_val < 2400) return 5;
+        if (raw_val < 2800) return 6;
+        if (raw_val < 3200) return 7;
+        if (raw_val < 3400) return 8;
+        return 9;
+    }
+    return 0;
+}
 ButtonState_t Inputs_ReadValidarBtn(void) {
-    // Leemos el pin PA0 (Asumiendo Pull-Down: 1 = Pulsado)
+    // Leemos el pin PA0
     GPIO_PinState estado_actual = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 
     ButtonState_t evento = BTN_IDLE;
     uint32_t ahora = HAL_GetTick();
 
-    if (estado_actual == GPIO_PIN_SET) {
+    if (estado_actual == GPIO_PIN_RESET) {
         // BOTÓN PRESIONADO
         if (!validar_is_pressed) {
             validar_is_pressed = 1;
@@ -58,13 +78,12 @@ ButtonState_t Inputs_ReadValidarBtn(void) {
         // BOTÓN SOLTADO
         if (validar_is_pressed) {
             uint32_t duracion = ahora - validar_start_time;
-            validar_is_pressed = 0; // Reset flag
+            validar_is_pressed = 0;
 
-            // Lógica de tiempos
             if (duracion >= LONG_PRESS_MS) {
-                evento = BTN_LONG_CLICK; // > 3 seg (Pista)
+                evento = BTN_LONG_CLICK;
             } else if (duracion >= DEBOUNCE_MS) {
-                evento = BTN_SHORT_CLICK; // Click normal (Validar)
+                evento = BTN_SHORT_CLICK;
             }
         }
     }
@@ -72,13 +91,13 @@ ButtonState_t Inputs_ReadValidarBtn(void) {
 }
 
 ButtonState_t Inputs_ReadMenuBtn(void) {
-    // Leemos el pin PC13 (Botón Menú/Reset)
+    // Leemos el pin PC13
     GPIO_PinState estado_actual = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 
     ButtonState_t evento = BTN_IDLE;
     uint32_t ahora = HAL_GetTick();
 
-    if (estado_actual == GPIO_PIN_SET) {
+    if (estado_actual == GPIO_PIN_RESET) {
         if (!menu_is_pressed) {
             menu_is_pressed = 1;
             menu_start_time = ahora;
@@ -90,9 +109,9 @@ ButtonState_t Inputs_ReadMenuBtn(void) {
             menu_is_pressed = 0;
 
             if (duracion >= LONG_PRESS_MS) {
-                evento = BTN_LONG_CLICK; // Apagar
+                evento = BTN_LONG_CLICK;
             } else if (duracion >= DEBOUNCE_MS) {
-                evento = BTN_SHORT_CLICK; // Reset
+                evento = BTN_SHORT_CLICK;
             }
         }
     }

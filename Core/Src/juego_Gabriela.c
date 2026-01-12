@@ -22,11 +22,10 @@ Juego_Handle_t Juego;
 char lcd_buffer[32]; // Buffer extendido para que no haya problemas
 
 
-// FUNCIONES PRIVADAS (Funciones sucias)
 
 // Genera un código secreto aleatorio (0-9)
 static void GenerarSecreto(void) {
-    srand(HAL_GetTick()); // Semilla: usa el tiempo transcurrido para mezclar diferente cada vez
+    srand(HAL_GetTick()); //usa el tiempo transcurrido para mezclar diferente cada vez
     for(int i=0; i<4; i++) {
         Juego.codigoSecreto[i] = rand() % 10; // Número aleatorio del 0 al 9
         Juego.digitoAcertado[i] = false; // Reset
@@ -198,6 +197,7 @@ void Juego_FSM_Update(void) {
 			// Cambio de estado
 			if (btnValidar == BTN_SHORT_CLICK) {
 				GenerarSecreto(); // Creamos la clave
+				Juego.indiceDigitoActual = 0;
 				Juego.estadoActual = ESTADO_CUENTA_ATRAS;
 				Juego.tiempoEnEstado = 0;
 				Display_LCD_Limpiar();
@@ -228,8 +228,6 @@ void Juego_FSM_Update(void) {
 			sprintf(lcd_buffer, "T:%03ds  	CLAVE:%d", segundos, Juego.indiceDigitoActual + 1);
 			Display_LCD_Escribir(0, 0, lcd_buffer);
 
-			// Mostramos el progreso:
-			// Los acertados se ven fijos. El actual se mueve. Los futuros son asteriscos.
 			char displayLine2[17];
 			for(int i=0; i<4; i++) {
 				if(i < Juego.indiceDigitoActual) {
@@ -299,11 +297,27 @@ void Juego_FSM_Update(void) {
             Actualizar_Semaforo(LED_VICTORIA); // Todos los LEDs on
 
             // A los 5 segundos, guardamos ranking
-            if (Juego.tiempoEnEstado > 5000) {
-                Ranking_Actualizar(Juego.usuarioID, Juego.tiempoRestante_ms);
-                Juego.estadoActual = ESTADO_RANKING;
-                Display_LCD_Limpiar();
-            }
+                        if (Juego.tiempoEnEstado > 5000) {
+
+                        	// --- BORRA LA LÍNEA ANTIGUA Y PON ESTO ---
+
+                        	// 1. Calculamos el tiempo total según dificultad
+                            uint32_t tiempoTotal = 120000; // Facil
+                            if(Juego.dificultad == DIFICULTAD_MEDIO) tiempoTotal = 90000;
+                            if(Juego.dificultad == DIFICULTAD_DIFICIL) tiempoTotal = 60000;
+
+                            // 2. Calculamos cuánto has tardado
+                            uint32_t segundosTardados = (tiempoTotal - Juego.tiempoRestante_ms) / 1000;
+
+                            // 3. Guardamos ESO en el ranking
+                            Ranking_Actualizar(Juego.usuarioID, segundosTardados, Juego.dificultad);
+
+                            // -----------------------------------------
+
+                            Juego.estadoActual = ESTADO_RANKING;
+                            Display_LCD_Limpiar();
+                        }
+
             break;
 
         case ESTADO_FIN_GAMEOVER:
@@ -317,15 +331,44 @@ void Juego_FSM_Update(void) {
             break;
 
         case ESTADO_RANKING:
-            // Aquí mostraríamos el ranking (simplificado)
-            Display_LCD_Escribir(0, 0, "HALL OF FAME:");
-            // Tocar botón para reiniciar
-            if (btnValidar == BTN_SHORT_CLICK) {
-                Juego.estadoActual = ESTADO_INICIO;
-            }
-            break;
+                    static uint32_t timer_ranking = 0;
+                    static int indice_mostrado = 0;
+                    uint32_t ahora = HAL_GetTick();
+
+                    if (ahora - timer_ranking > 5000) {
+                        timer_ranking = ahora;
+                        indice_mostrado = 0;
+                    }
+
+                    // TITULO DINÁMICO SEGÚN DIFICULTAD
+                    if(Juego.dificultad == DIFICULTAD_FACIL)      Display_LCD_Escribir(0, 0, "TOP 10 - FACIL ");
+                    else if(Juego.dificultad == DIFICULTAD_MEDIO) Display_LCD_Escribir(0, 0, "TOP 10 - MEDIO ");
+                    else                                          Display_LCD_Escribir(0, 0, "TOP 10 - HARD  ");
+
+                    // Carrusel
+                    if (ahora - timer_ranking > 2000) {
+                        timer_ranking = ahora;
+                        indice_mostrado++;
+                        if (indice_mostrado >= 10) indice_mostrado = 0;
+                    }
+                    // Usamos Juego.dificultad para saber qué lista sacar
+                    Jugador p = Top10[Juego.dificultad][indice_mostrado];
+                    // ------------------------------------------------------
+
+                    if (p.puntuacion >= 99990) {
+                       sprintf(lcd_buffer, "%d. --- VACIO ---", indice_mostrado + 1);
+                    } else {
+                       sprintf(lcd_buffer, "%d.ID:%04d T:%lds", indice_mostrado + 1, p.id_usuario, p.puntuacion);
+                    }
+                    Display_LCD_Escribir(1, 0, lcd_buffer);
+
+                    if (btnValidar == BTN_SHORT_CLICK || btnMenu == BTN_SHORT_CLICK) {
+                        Juego.estadoActual = ESTADO_INICIO;
+                        Audio_Play_Validar();
+                        indice_mostrado = 0;
+                    }
+                    break;
+
+
     }
 }
-
-
-
