@@ -54,8 +54,8 @@
 
 /* USER CODE BEGIN PV */
 EntradasUsuario misPotenciometros;
-volatile int tiempo_restante = 60;
-//volatile int contador_tim4 = 0; //Variable de prueba TIM4
+volatile int tiempo_restante = 0;
+volatile uint8_t flag_sonar_tic = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,16 +139,30 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   // Limpiamos la pantalla una vez antes de entrar
     Display_LCD_Limpiar();
-  while (1)
-  {
-    /* USER CODE END WHILE */
+    /* Infinite loop */
+      /* USER CODE BEGIN WHILE */
+      Display_LCD_Limpiar(); // Esto ya lo tenías
 
-    /* USER CODE BEGIN 3 */
-	 Juego_FSM_Update();
-  /* USER CODE END 3 */
-  }
-}
+      while (1)
+      {
+          // 1. GESTION DEL SONIDO TIC-TAC
+    	  // 1. GESTION DEL SONIDO TIC-TAC
+    	        if (flag_sonar_tic == 1) {
+    	            // Efecto realista: Pares = Tic, Impares = Tac
+    	            if (tiempo_restante % 2 == 0) {
+    	                Audio_Play_Tic();
+    	            } else {
+    	                Audio_Play_Tac();
+    	            }
+    	            flag_sonar_tic = 0; // Bajamos la bandera
+    	        }
 
+        /* USER CODE END WHILE */
+
+        /* USER CODE BEGIN 3 */
+    	 Juego_FSM_Update();
+    	/* USER CODE END 3 */
+      }}
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -196,12 +210,14 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+/* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     // CASO 1: Timer del JUEGO (1 segundo)
     if (htim->Instance == TIM2) {
         if (tiempo_restante > 0) {
             tiempo_restante--;
+            flag_sonar_tic = 1; // <--- ¡Importante que esté esto!
         }
     }
 
@@ -210,7 +226,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     	Juego_Tick_Timer();
     }
 }
-
+/* USER CODE END 4 */
 
 /* USER CODE END 4 */
 

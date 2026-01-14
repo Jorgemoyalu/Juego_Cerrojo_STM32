@@ -15,7 +15,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-
+extern volatile int tiempo_restante;
+extern volatile uint8_t flag_sonar_tic;
 
 // VARIABLES GLOBALES
 Juego_Handle_t Juego;
@@ -107,12 +108,14 @@ void Juego_FSM_Update(void) {
 
     // RESET DEL JUEGO PARA EL USUARIO
     if (btnMenu == BTN_SHORT_CLICK) {
+    	tiempo_restante = 0;
         Juego.estadoActual = ESTADO_INICIO; // Reset rápido
         Audio_Play_Tic();
         return; // Seguridad
     }
     // APAGÓN
     if (btnMenu == BTN_LONG_CLICK) {
+    	tiempo_restante = 0;
         Juego.estadoActual = ESTADO_OFF; // Apagar
         Display_LCD_Limpiar();
         Display_LCD_Escribir(0, 0, "    BYE BYE!    ");
@@ -196,6 +199,7 @@ void Juego_FSM_Update(void) {
 
 			// Cambio de estado
 			if (btnValidar == BTN_SHORT_CLICK) {
+				tiempo_restante = Juego.tiempoRestante_ms / 1000;
 				GenerarSecreto(); // Creamos la clave
 				Juego.indiceDigitoActual = 0;
 				Juego.estadoActual = ESTADO_CUENTA_ATRAS;
@@ -218,12 +222,16 @@ void Juego_FSM_Update(void) {
         case ESTADO_JUEGO_ACTIVO:
 			// ¿GAME OVER?
 			if (Juego.tiempoRestante_ms == 0) {
+				tiempo_restante = 0;
 				Juego.estadoActual = ESTADO_FIN_GAMEOVER;
 				Audio_Play_GameOver();
 				break;
 			}
-
+			static uint32_t ultimo_refresco_lcd = 0;
 			// ACTUALIZAR PANTALLA
+			if (HAL_GetTick() - ultimo_refresco_lcd > 100) {
+				ultimo_refresco_lcd = HAL_GetTick(); // Actualizamos reloj
+
 			int segundos = Juego.tiempoRestante_ms / 1000;
 			sprintf(lcd_buffer, "T:%03ds  	CLAVE:%d", segundos, Juego.indiceDigitoActual + 1);
 			Display_LCD_Escribir(0, 0, lcd_buffer);
@@ -250,7 +258,7 @@ void Juego_FSM_Update(void) {
 
 			// SEMÁFORO
 			ActualizarFeedbackVisual();
-
+			}
 			// LÓGICA DE BOTONES
 			if (btnValidar == BTN_SHORT_CLICK) {
 				// Chequeamos SOLO el dígito actual
@@ -260,10 +268,13 @@ void Juego_FSM_Update(void) {
 				if (val == target) {
 					// ACIERTO
 					Audio_Play_Validar();
+					flag_sonar_tic = 0;
+					HAL_Delay(600);
 					Juego.indiceDigitoActual++; // Pasamos al siguiente candado
 
 					// Si era el último (ya tenemos los 4)...
 					if (Juego.indiceDigitoActual >= 4) {
+						tiempo_restante = 0;
 						Juego.estadoActual = ESTADO_FIN_VICTORIA;
 						Audio_Play_Victoria();
 					}
@@ -273,6 +284,8 @@ void Juego_FSM_Update(void) {
 					if(Juego.tiempoRestante_ms > 5000) Juego.tiempoRestante_ms -= 5000;
 					else Juego.tiempoRestante_ms = 0;
 					Audio_Play_Error();
+					HAL_Delay(600);
+					flag_sonar_tic = 0;
 				}
 			}
 			// PEDIR PISTA
