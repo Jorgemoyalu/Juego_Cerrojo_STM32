@@ -21,7 +21,6 @@
 #include "adc.h"
 #include "i2c.h"
 #include "tim.h"
-#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -32,7 +31,6 @@
 #include "display_Tudor.h"
 #include "ranking_Tudor.h"
 #include "juego_Gabriela.h"
-#include "bluetooth_Gabriela.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,7 +101,6 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   MX_TIM4_Init();
-  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   Inputs_Init();
   Display_Init();
@@ -157,12 +154,14 @@ int main(void)
     	            flag_sonar_tic = 0; // Bajamos la bandera
     	        }
 
-        /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-        /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
     	 Juego_FSM_Update();
-    	/* USER CODE END 3 */
-      }}
+      }
+  /* USER CODE END 3 */
+}
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -226,8 +225,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     	Juego_Tick_Timer();
     }
 }
-/* USER CODE END 4 */
-
 /* USER CODE END 4 */
 
 /**

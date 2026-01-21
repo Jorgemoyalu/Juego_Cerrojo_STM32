@@ -11,7 +11,6 @@
 #include "audio_Jorge.h"
 #include "display_Tudor.h"
 #include "ranking_Tudor.h"
-#include "bluetooth_Gabriela.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -47,13 +46,12 @@ static void ActualizarFeedbackVisual(void) {
     // Decidimos color según DIFICULTAD
     if (distancia == 0) {
         // LO TIENES!
-        if (Juego.dificultad == DIFICULTAD_DIFICIL) {
-            // En difícil NO hay verde, dejamos en amarillo
-            Actualizar_Semaforo(LED_TEMPLADO_AMARILLO);
-        } else {
-            // En Fácil/Medio sí damos el gusto visual
-            Actualizar_Semaforo(LED_CALIENTE_VERDE);
-        }
+    	if (Juego.dificultad == DIFICULTAD_FACIL) {
+			 Actualizar_Semaforo(LED_CALIENTE_VERDE);
+		} else {
+			// EN MEDIO Y DIFÍCIL: Se queda en amarillo para despistar un poco ;)
+			Actualizar_Semaforo(LED_TEMPLADO_AMARILLO);
+		}
     }
     else if (distancia <= 2) {
         // CALIENTE (Cerca, a +/- 1 o 2) --- Ej: Si es 5 y pones 3, 4, 6 o 7 -> Amarillo
@@ -106,13 +104,19 @@ void Juego_FSM_Update(void) {
     ButtonState_t btnMenu = Inputs_ReadMenuBtn(); 		// CLICK CORTO: reset
 														// CLICK LARGO (> 3s): standby
 
-    // RESET DEL JUEGO PARA EL USUARIO
-    if (btnMenu == BTN_SHORT_CLICK) {
-    	tiempo_restante = 0;
-        Juego.estadoActual = ESTADO_INICIO; // Reset rápido
-        Audio_Play_Tic();
-        return; // Seguridad
-    }
+    // RESET DEL JUEGO / ENCENDER
+	if (btnMenu == BTN_SHORT_CLICK) {
+		tiempo_restante = 0;
+		Juego.estadoActual = ESTADO_INICIO;
+
+		// --- AQUÍ ESTÁ EL TRUCO ---
+		Juego.tiempoEnEstado = 0; // ¡RESET DEL CRONÓMETRO️
+		Display_LCD_Limpiar();
+
+		Audio_Play_Tic();
+		return;
+	}
+
     // APAGÓN
     if (btnMenu == BTN_LONG_CLICK) {
     	tiempo_restante = 0;
@@ -137,8 +141,8 @@ void Juego_FSM_Update(void) {
 
             // Pantalla de Bienvenida
             if (Juego.tiempoEnEstado < 100) { // Solo la primera vez
-                Display_LCD_Escribir(0, 0, " BIENVENIDO "); // ARRIBA IZQ
-                Display_LCD_Escribir(1, 0, "PULSA OK (btn DER) "); // ABAJO IZQ
+                Display_LCD_Escribir(0, 0, "   BIENVENIDO"); // ARRIBA IZQ
+                Display_LCD_Escribir(1, 0, "    PULSA OK"); // ABAJO IZQ
             }
 
             // Cambio de estado
@@ -154,9 +158,9 @@ void Juego_FSM_Update(void) {
 			Juego.usuarioID = (Inputs_ReadPot(0)*1000) + (Inputs_ReadPot(1)*100) + (Inputs_ReadPot(2)*10) + Inputs_ReadPot(3);
 			// Ejemplo: 1000 + 200 + 30 + 4 = 1234
 
-			sprintf(lcd_buffer, "LOGIN ID: %04d", Juego.usuarioID);
+			sprintf(lcd_buffer, " LOGIN ID: %04d", Juego.usuarioID);
 			Display_LCD_Escribir(0, 0, lcd_buffer);
-			Display_LCD_Escribir(1, 0, "PULSA OK AL TERMINAR");
+			Display_LCD_Escribir(1, 0, "    PULSA OK");
 
 			// Cambio de estado
 			if (btnValidar == BTN_SHORT_CLICK) {
@@ -164,8 +168,8 @@ void Juego_FSM_Update(void) {
 
 				// (INSTRUCCIONES)
 				Display_LCD_Limpiar();
-				Display_LCD_Escribir(0, 0, "USA POTE 1 MENU"); // Avisamos qué tocar
-				Display_LCD_Escribir(1, 0, "PULSA OK");
+				Display_LCD_Escribir(0, 0, "MOVERSE: POTEN 1"); // Avisamos qué tocar
+				Display_LCD_Escribir(1, 0, "    PULSA OK");
 				HAL_Delay(3000); // Congelamos 3 segs para que lean
 				Display_LCD_Limpiar();
 
@@ -180,19 +184,19 @@ void Juego_FSM_Update(void) {
 			if (val < 3)
 			{
 				Juego.dificultad = DIFICULTAD_FACIL;
-				Display_LCD_Escribir(0, 0, "DIFICULTAD: FACIL");
+				Display_LCD_Escribir(0, 0, "MODO: FACIL   ");
 				Display_LCD_Escribir(1, 0, "TIEMPO: 120s    ");
 				Juego.tiempoRestante_ms = 120000; // 2 min
 			} else if (val < 7)
 			{
 				Juego.dificultad = DIFICULTAD_MEDIO;
-				Display_LCD_Escribir(0, 0, "DIFICULTAD: MEDIO");
+				Display_LCD_Escribir(0, 0, "MODO: MEDIO    ");
 				Display_LCD_Escribir(1, 0, "TIEMPO: 90s     ");
 				Juego.tiempoRestante_ms = 90000; // 1.5 min
 			} else
 			{
 				Juego.dificultad = DIFICULTAD_DIFICIL;
-				Display_LCD_Escribir(0, 0, "DIFICULTAD: HARD ");
+				Display_LCD_Escribir(0, 0, "MODO: DIFICIL    ");
 				Display_LCD_Escribir(1, 0, "TIEMPO: 60s     ");
 				Juego.tiempoRestante_ms = 60000; // 1 min
 			}
@@ -209,9 +213,9 @@ void Juego_FSM_Update(void) {
 			break;
 
         case ESTADO_CUENTA_ATRAS:
-            if (Juego.tiempoEnEstado < 1000) Display_LCD_Escribir(0, 6, " 3 ");
-            else if (Juego.tiempoEnEstado < 2000) Display_LCD_Escribir(0, 6, " 2 ");
-            else if (Juego.tiempoEnEstado < 3000) Display_LCD_Escribir(0, 6, " 1 ");
+        	if (Juego.tiempoEnEstado < 1000) Display_LCD_Escribir(0, 0, "      3...");
+        	else if (Juego.tiempoEnEstado < 2000) Display_LCD_Escribir(0, 0, "      2 1...");
+            else if (Juego.tiempoEnEstado < 3000) Display_LCD_Escribir(0, 0, "    3 2 1...");
             else {
                 Audio_Play_Tic(); // Sonidino de start
                 Juego.estadoActual = ESTADO_JUEGO_ACTIVO;
@@ -228,12 +232,14 @@ void Juego_FSM_Update(void) {
 				break;
 			}
 			static uint32_t ultimo_refresco_lcd = 0;
+
 			// ACTUALIZAR PANTALLA
 			if (HAL_GetTick() - ultimo_refresco_lcd > 100) {
 				ultimo_refresco_lcd = HAL_GetTick(); // Actualizamos reloj
 
 			int segundos = Juego.tiempoRestante_ms / 1000;
-			sprintf(lcd_buffer, "T:%03ds  	CLAVE:%d", segundos, Juego.indiceDigitoActual + 1);
+
+			sprintf(lcd_buffer, "T:%03ds   CLAVE:%d", segundos, Juego.indiceDigitoActual + 1);
 			Display_LCD_Escribir(0, 0, lcd_buffer);
 
 			char displayLine2[17];
@@ -289,48 +295,45 @@ void Juego_FSM_Update(void) {
 				}
 			}
 			// PEDIR PISTA
-			else if (btnValidar == BTN_LONG_CLICK) {
-				if (Juego.dificultad == DIFICULTAD_DIFICIL) {
-					Audio_Play_Error();
-				} else {
-					// Penalización (-15s)
-					if(Juego.tiempoRestante_ms > 15000) Juego.tiempoRestante_ms -= 15000;
-					else Juego.tiempoRestante_ms = 0;
-					Audio_Play_Tic();
-					// Enviamos solo el número que se complica
-					Bluetooth_EnviarPista(Juego.codigoSecreto, Juego.dificultad);
-					Display_LCD_Escribir(0, 0, "PISTA ENVIADA...");
-					HAL_Delay(1000);
-				}
-			}
+				else if (btnValidar == BTN_LONG_CLICK) {
+					if (Juego.dificultad == DIFICULTAD_DIFICIL) {
+						Audio_Play_Error(); // EN DIFÍCIL NO HAY AYUDA
+					} else {
+						// -15s
+						if(Juego.tiempoRestante_ms > 15000) Juego.tiempoRestante_ms -= 15000;
+						else Juego.tiempoRestante_ms = 0;
+
+						Audio_Play_Tic();
+
+						// BUSCAMOS EL NÚMERO CORRESPONDIENTE
+						uint8_t digito = Juego.codigoSecreto[Juego.indiceDigitoActual];
+						sprintf(lcd_buffer, "PISTA: ES EL %d", digito);
+
+						Display_LCD_Limpiar();
+						Display_LCD_Escribir(0, 0, lcd_buffer);
+						Display_LCD_Escribir(1, 0, "(-15s TIEMPO)");
+
+						// PARA QUE DE TIEMPO A LEERLO
+						HAL_Delay(2000);
+						Display_LCD_Limpiar();
+							}
+						}
+
 			break;
 
         case ESTADO_FIN_VICTORIA:
             Display_LCD_Escribir(0, 0, "  ¡¡ VICTORIA !! ");
-            Actualizar_Semaforo(LED_VICTORIA); // Todos los LEDs on
+            Actualizar_Semaforo(LED_VICTORIA);
 
-            // A los 5 segundos, guardamos ranking
                         if (Juego.tiempoEnEstado > 5000) {
-
-                        	// --- BORRA LA LÍNEA ANTIGUA Y PON ESTO ---
-
-                        	// 1. Calculamos el tiempo total según dificultad
                             uint32_t tiempoTotal = 120000; // Facil
                             if(Juego.dificultad == DIFICULTAD_MEDIO) tiempoTotal = 90000;
                             if(Juego.dificultad == DIFICULTAD_DIFICIL) tiempoTotal = 60000;
-
-                            // 2. Calculamos cuánto has tardado
                             uint32_t segundosTardados = (tiempoTotal - Juego.tiempoRestante_ms) / 1000;
-
-                            // 3. Guardamos ESO en el ranking
                             Ranking_Actualizar(Juego.usuarioID, segundosTardados, Juego.dificultad);
-
-                            // -----------------------------------------
-
                             Juego.estadoActual = ESTADO_RANKING;
                             Display_LCD_Limpiar();
                         }
-
             break;
 
         case ESTADO_FIN_GAMEOVER:
@@ -366,7 +369,6 @@ void Juego_FSM_Update(void) {
                     }
                     // Usamos Juego.dificultad para saber qué lista sacar
                     Jugador p = Top10[Juego.dificultad][indice_mostrado];
-                    // ------------------------------------------------------
 
                     if (p.puntuacion >= 99990) {
                        sprintf(lcd_buffer, "%d. --- VACIO ---", indice_mostrado + 1);
